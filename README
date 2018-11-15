@@ -27,7 +27,7 @@ as well as some auxiliary functions
 
  * (re)initialize outputs, in case of network outage
 
- * keepalive messages and timer
+ * keepalive messages and timer (m)
 
  * report the kernel-exported CSV list of I/O fields (D)
 
@@ -39,7 +39,7 @@ its input+output list).
 There can be more than one active server connection.
 Monitors, re-inits and keepalives are specific to the connection they have been issued on.
 
-A challenge/response mechanism is used to authorize the remote side.
+TODO: A challenge/response mechanism is used to authorize the remote side.
 
 
 Building and installing
