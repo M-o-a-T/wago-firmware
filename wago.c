@@ -158,7 +158,7 @@ static int report_bus(struct _bus *bus, void *priv)
 
 static int list_bus_debug(struct _bus *bus, void *priv)
 {
-	printf("%d: %s:%s %d\n", bus->id,bus_typname(bus->typ),bus->typname, bus->bits);
+	fprintf(stderr, "%d: %s:%s %d\n", bus->id,bus_typname(bus->typ),bus->typname, bus->bits);
 	return 0;
 }
 
@@ -316,7 +316,7 @@ main(int argc, char **argv)
 
 	if (listen_stdin > 0) {
 		if (debug)
-			printf("Listening on stdin.\n");
+			fprintf(stderr, "Listening on stdin.\n");
 		if (stdio_setup(base) < 0) {
 			fprintf(stderr, "Could not listen on stdio: %s\n",strerror(errno));
 			return 1;
@@ -357,7 +357,7 @@ main(int argc, char **argv)
 	event_free(timer_event);
 	event_base_free(base);
 
-	printf("done\n");
+	fprintf(stderr, "done\n");
 	return 0;
 }
 
@@ -368,7 +368,7 @@ listener_cb(struct evconnlistener *listener, evutil_socket_t fd,
 	struct event_base *base = user_data;
 
 	if(debug)
-		printf("New connection: fd %d\n",fd);
+		fprintf(stderr,"New connection: fd %d\n",fd);
 
 	if(interface_setup(base,fd) < 0) {
 		fprintf(stderr,"Could not setup interface: %s",strerror(errno));
@@ -812,7 +812,7 @@ conn_readcb(struct bufferevent *bev, void *user_data)
 		if (line == NULL)
 			break;
 		if(debug)
-			printf("Read on %d: %s.\n", bufferevent_getfd(bev),line);
+			fprintf(stderr, "Read on %d: %s.\n", bufferevent_getfd(bev),line);
 		parse_input(bev_w,line);
 		free(line);
 	}
@@ -822,9 +822,9 @@ static void
 conn_eventcb(struct bufferevent *bev, short events, void *user_data)
 {
 	if (events & BEV_EVENT_EOF) {
-		printf("Connection %d closed.\n", bufferevent_getfd(bev));
+		fprintf(stderr, "Connection %d closed.\n", bufferevent_getfd(bev));
 	} else if (events & BEV_EVENT_ERROR) {
-		printf("Got an error on connection %d: %s\n", bufferevent_getfd(bev), strerror(errno));
+		fprintf(stderr, "Got an error on connection %d: %s\n", bufferevent_getfd(bev), strerror(errno));
 	}
 	/* None of the other events can happen here, since we haven't enabled
 	 * timeouts */
@@ -838,7 +838,7 @@ signal_cb(evutil_socket_t sig, short events, void *user_data)
 	struct event_base *base = user_data;
 	struct timeval delay = { 2, 0 };
 
-	printf("Caught an interrupt signal; exiting cleanly in two seconds.\n");
+	fprintf(stderr, "Caught an interrupt signal; exiting cleanly in two seconds.\n");
 
 	event_base_loopexit(base, &delay);
 }
@@ -847,7 +847,7 @@ static void
 timer_cb(evutil_socket_t sig, short events, void *user_data)
 {
 	if(debug)
-		printf("Loop.\n");
+		fprintf(stderr, "Loop.\n");
 	bus_sync();
 	mon_sync();
 }

@@ -135,7 +135,7 @@ int mon_new(enum mon_type typ, unsigned char port, unsigned char offset, struct 
 	mon->next = mon_list;
 	mon_list = mon;
 	if(debug)
-		printf("New Monitor %s:%d: %d:%d > %d:%d %d\n",
+		fprintf(stderr,"New Monitor %s:%d: %d:%d > %d:%d %d\n",
 			mon_typname(mon->mon.typ),mon->mon.id, port,offset, _port,_offset, mon->state);
 	return mon->mon.id;
 }
@@ -285,7 +285,7 @@ once_cb(evutil_socket_t sig, short events, void *user_data)
 	struct evbuffer *out = outbuf(mon);
 
 	if(debug)
-		printf("monitor %d triggers\n", mon->mon.id);
+		fprintf(stderr,"monitor %d triggers\n", mon->mon.id);
 	if (
 #ifdef DEMO
 		(demo_state_skip) ||
@@ -324,7 +324,7 @@ loop_cb(evutil_socket_t sig, short events, void *user_data)
 		_bus_write_bit(mon->_port,mon->_offset, mon->state);
 	
 		if(debug)
-			printf("monitor %d toggles: %c\n", mon->mon.id, mon->state ? 'H' : 'L');
+			fprintf(stderr,"monitor %d toggles: %c\n", mon->mon.id, mon->state ? 'H' : 'L');
 	
 		tv = mon->delay;
 		mon->delay = mon->delay2;
@@ -336,7 +336,7 @@ loop_cb(evutil_socket_t sig, short events, void *user_data)
 		mon->timer = NULL;
 
 		if(debug)
-			printf("monitor %d: ext change: %c\n", mon->mon.id, mon->state ? 'H' : 'L');
+			fprintf(stderr,"monitor %d: ext change: %c\n", mon->mon.id, mon->state ? 'H' : 'L');
 		if(out)
 			evbuffer_add_printf(out, "!-%d DROP: saw external change in timer\n", mon->mon.id);
 
@@ -397,7 +397,7 @@ void mon_sync(void)
 			_bus_write_bit(mon->_port,mon->_offset, 1);
 		clear_common:
 			if(debug)
-				printf("Mon%d: dropped, found %c\n", mon->mon.id, state?'H':'L');
+				fprintf(stderr,"Mon%d: dropped, found %c\n", mon->mon.id, state?'H':'L');
 			if(out)
 				evbuffer_add_printf(out, "!-%d DROP %c: saw external change in loop\n", mon->mon.id, state?'H':'L');
 			mon->buf = NULL;
@@ -408,7 +408,7 @@ void mon_sync(void)
 		case MON_REPORT:
 		mon_report:
 			if(debug)
-				printf("Mon%d: %c\n", mon->mon.id, state?'H':'L');
+				fprintf(stderr,"Mon%d: %c\n", mon->mon.id, state?'H':'L');
 			if(out)
 				evbuffer_add_printf(out, "!%d %c\n", mon->mon.id, state?'H':'L');
 			break;
@@ -425,7 +425,7 @@ void mon_sync(void)
 			mon->count++;
 			if (mon->timer == NULL) {
 				if(debug)
-					printf("Mon%d: %ld %ld.%06lu\n", mon->mon.id, mon->count, mon->delay.tv_sec,mon->delay.tv_usec);
+					fprintf(stderr,"Mon%d: %ld %ld.%06lu\n", mon->mon.id, mon->count, mon->delay.tv_sec,mon->delay.tv_usec);
 				mon->timer = event_new(base, -1, EV_TIMEOUT, counter_cb, mon);
 				if(mon->timer == NULL || event_add(mon->timer, &mon->delay)) {
 					if(out) {
@@ -436,7 +436,7 @@ void mon_sync(void)
 				event_base_gettimeofday_cached(base, &mon->last);
 			} else {
 				if(debug)
-					printf("Mon%d: %ld\n", mon->mon.id, mon->count);
+					fprintf(stderr,"Mon%d: %ld\n", mon->mon.id, mon->count);
 			}
 			break;
 		case MON_COUNT_H:

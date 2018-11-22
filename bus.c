@@ -164,13 +164,15 @@ int _bus_find_bit(unsigned short *_port,unsigned short *_offset, enum bus_type t
 
 		if (bus->bus.typ != typ) {
 			errno = EINVAL;
-			if(debug) printf("Check %d %d for %s FAILED: wrong device\n",port,offset,bus_typname(typ));
+			if(debug)
+				fprintf(stderr, "Check %d %d for %s FAILED: wrong device\n",port,offset,bus_typname(typ));
 			return -1;
 		}
 
 		if (offset == 0 || offset > bus->bus.bits) {
 			errno = EINVAL;
-			if(debug) printf("Check %d %d for %s FAILED: max %d bits\n",port,offset,bus_typname(typ), bus->bus.bits);
+			if(debug)
+				fprintf(stderr, "Check %d %d for %s FAILED: max %d bits\n",port,offset,bus_typname(typ), bus->bus.bits);
 			return -1;
 		}
 
@@ -180,7 +182,8 @@ int _bus_find_bit(unsigned short *_port,unsigned short *_offset, enum bus_type t
 		return 0;
 	}
 		
-	if(debug) printf("Check %d %d for %s FAILED: ID not found\n",port,offset,bus_typname(typ));
+	if(debug)
+		fprintf(stderr, "Check %d %d for %s FAILED: ID not found\n",port,offset,bus_typname(typ));
 	errno = ENODEV;
 	return -1;
 }
@@ -213,7 +216,7 @@ char _bus_read_bit(unsigned short port,unsigned short offset)
 	res = (pstPabIN->uc.Pab[port] & (1<<offset)) ? 1 : 0;
 #endif
 	if(debug)
-		printf("    bit %d:%d = %d\n", port,offset, res);
+		fprintf(stderr, "    bit %d:%d = %d\n", port,offset, res);
 	return res;
 }
 
@@ -233,7 +236,7 @@ char _bus_read_wbit(unsigned short port,unsigned short offset)
 	res = (pstPabOUT->uc.Pab[port] & (1<<offset)) ? 1 : 0;
 #endif
 	if(debug)
-		printf("   wbit %d:%d = %d\n", port,offset, res);
+		fprintf(stderr, "   wbit %d:%d = %d\n", port,offset, res);
 	return res;
 }
 
@@ -242,7 +245,7 @@ char _bus_read_wbit(unsigned short port,unsigned short offset)
 void _bus_write_bit(unsigned short port,unsigned short offset, char value)
 {
 	if(debug)
-		printf("Set bit %d:%d = %d\n", port,offset, value);
+		fprintf(stderr,"Set bit %d:%d = %d\n", port,offset, value);
 #ifdef DEMO
 	demo_state_w = value;
 #else
