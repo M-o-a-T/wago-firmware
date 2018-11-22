@@ -70,6 +70,7 @@ static void timer_cb(evutil_socket_t, short, void *);
 static void off_cb(evutil_socket_t, short, void *);
 #endif
 static int interface_setup(struct event_base *base, evutil_socket_t fd);
+static int stdio_setup(struct event_base *base);
 
 struct event_base *base = NULL;
 static struct evconnlistener *listener = NULL;
@@ -316,7 +317,7 @@ main(int argc, char **argv)
 	if (listen_stdin > 0) {
 		if (debug)
 			printf("Listening on stdin.\n");
-		if (interface_setup(base,fileno(stdin)) < 0) {
+		if (stdio_setup(base) < 0) {
 			fprintf(stderr, "Could not listen on stdio: %s\n",strerror(errno));
 			return 1;
 		}
@@ -383,10 +384,31 @@ interface_setup(struct event_base *base, evutil_socket_t fd)
 	if (bev == NULL)
 		return -1;
 
-	bufferevent_setcb(bev, conn_readcb, NULL, conn_eventcb, NULL);
+	bufferevent_setcb(bev, conn_readcb, NULL, conn_eventcb, bev);
 
 	bufferevent_write(bev, MSG_HELLO, strlen(MSG_HELLO));
 	bufferevent_enable(bev, EV_READ);
+	return 0;
+}
+
+static int
+stdio_setup(struct event_base *base)
+{
+	struct bufferevent *bev_r, *bev_w;
+	bev_r = bufferevent_socket_new(base, 0, BEV_OPT_CLOSE_ON_FREE);
+	if (bev_r == NULL)
+		return -1;
+	bev_w = bufferevent_socket_new(base, 1, BEV_OPT_CLOSE_ON_FREE);
+	if (bev_w == NULL) {
+		bufferevent_free(bev_r);
+		return -1;
+	}
+
+	bufferevent_setcb(bev_r, conn_readcb, NULL, conn_eventcb, bev_w);
+	bufferevent_setcb(bev_w, NULL, NULL, conn_eventcb, bev_w);
+
+	bufferevent_write(bev_w, MSG_HELLO, strlen(MSG_HELLO));
+	bufferevent_enable(bev_r, EV_READ);
 	return 0;
 }
 
@@ -776,6 +798,11 @@ parse_input(struct bufferevent *bev, const char *line)
 static void
 conn_readcb(struct bufferevent *bev, void *user_data)
 {
+	struct bufferevent *bev_w;
+	if(user_data)
+		bev_w = (struct bufferevent *)user_data;
+	else
+		bev_w = bev;
 	struct evbuffer *buf = bufferevent_get_input(bev);
 	while(1) {
 		char *line;
@@ -786,7 +813,7 @@ conn_readcb(struct bufferevent *bev, void *user_data)
 			break;
 		if(debug)
 			printf("Read on %d: %s.\n", bufferevent_getfd(bev),line);
-		parse_input(bev,line);
+		parse_input(bev_w,line);
 		free(line);
 	}
 }
