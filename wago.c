@@ -259,7 +259,7 @@ main(int argc, char **argv)
 				*ap++ = "-p";
 				*ap++ = optarg;
 				p = strtoul(optarg, &ep, 10);
-				if(!*optarg || *ep || p>65535 || p==0 ) {
+				if(!*optarg || *ep || p>65535 || p<0 ) {
 					fprintf(stderr, "'%s' is not a valid port. Port numbers need to be >0 and <65536.\n", optarg);
 					exit(1);
 				}
