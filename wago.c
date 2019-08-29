@@ -546,7 +546,11 @@ parse_input(struct bufferevent *bev, const char *line)
 		} else if(line[1] == 'a') {
 			int mon_id;
 			if(sscanf(line+2,"%g",&p3) != 1) {
-				evbuffer_add_printf(out,"?Da needs a float parameter.\n");
+				evbuffer_add_printf(out,"?'Da' needs a float parameter.\n");
+				break;
+			}
+			if (p3 < 0.1) {
+				evbuffer_add_printf(out,"?'Da' duration must be 0.1 min.\n");
 				break;
 			}
 			mon_id = mon_new(MON_KEEPALIVE,0,0, bev, (int)(p3*1000),0);
@@ -674,6 +678,10 @@ parse_input(struct bufferevent *bev, const char *line)
 			}
 			if (res < 4)
 				p3 = 1;
+			else if (p3 < 0.01) {
+				evbuffer_add_printf(out,"?'m%c' interval cannot be < 0.01\n",line[1]);
+				return;
+			}
 
 			switch(edge) {
 			case '+':
