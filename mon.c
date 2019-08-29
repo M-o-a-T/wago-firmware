@@ -26,6 +26,7 @@ struct _mon_priv {
 	struct timeval last;
 	unsigned short _port,_offset;
 	unsigned long count;
+	unsigned long last_count;
 	unsigned char state;
 };
 static struct _mon_priv *mon_list = NULL;
@@ -88,6 +89,8 @@ int mon_new(enum mon_type typ, unsigned char port, unsigned char offset, struct 
 	mon->_offset = _offset;
 	mon->state = state;
 	mon->buf = buf;
+	mon->count = 0;
+	mon->last_count = 0;
 	mon->delay.tv_sec = msec/1000;
 	mon->delay.tv_usec = 1000*(msec-1000*mon->delay.tv_sec);
 	if(typ < _MON_UNKNOWN_IN || typ > _MON_UNKNOWN_OUT) {
@@ -272,10 +275,16 @@ counter_cb(evutil_socket_t sig, short events, void *user_data)
 	struct _mon_priv *mon = (struct _mon_priv *)user_data;
 	struct evbuffer *out = outbuf(mon);
 
-	event_free(mon->timer);
-	mon->timer = NULL;
 	if(out)
 		evbuffer_add_printf(out, "!%d %ld\n", mon->mon.id, mon->count);
+	if (mon->count != mon->last_count) {
+		mon->last_count = mon->count;
+		event_add(mon->timer, &mon->delay);
+		event_base_gettimeofday_cached(base, &mon->last);
+	} else {
+		event_free(mon->timer);
+		mon->timer = NULL;
+	}
 }
 
 static void
@@ -430,8 +439,12 @@ void mon_sync(void)
 				if(mon->timer == NULL || event_add(mon->timer, &mon->delay)) {
 					if(out) {
 						evbuffer_add_printf(out, "!%d %ld\n", mon->mon.id, mon->count);
-						evbuffer_add_printf(out, "* Monitor timeout: error: %s\n", strerror(errno));
+						evbuffer_add_printf(out, "!-%d error\n", mon->mon.id);
 					}
+				} else {
+					mon->last_count = mon->count;
+					if (out) 
+						evbuffer_add_printf(out, "!%d %ld\n", mon->mon.id, mon->count);
 				}
 				event_base_gettimeofday_cached(base, &mon->last);
 			} else {
